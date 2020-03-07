@@ -1,0 +1,2348 @@
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;Author: DarshanaAriyarathna || darshana.uop@gmail.com || +94774901245
+                      00002     processor   16f877a                 ;Initialize the processor
+                      00003     #include    <p16f877a.inc>          ;Include library
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Sep 19 2017
+                      00005 ;  MPASM PIC16F877A processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2017 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00567         LIST
+                      00004 
+                      00005 
+                      00006     org     0x00;
+  00000020            00007 TIMER1  EQU     0x20
+  00000021            00008 TIMER2  EQU     0x21
+  00000022            00009 DISP    EQU     0x22
+                      00010 
+  0000003C            00011 K4          equ 0x3C
+  00000023            00012 K3          EQU 0x23
+  00000024            00013 K2          EQU 0x24
+  00000025            00014 K1          EQU 0x25
+  00000026            00015 K0          EQU 0x26
+                      00016 
+  00000027            00017 HIGH_BIT_COPPY  EQU 0x27
+  00000028            00018 LOW_BIT_COPPY   EQU 0x28
+  00000029            00019 NEWS    EQU     0x29    
+                      00020     
+  0000002A            00021 NORTH_H         EQU     0x2A
+  0000002B            00022 NORTH_L         EQU     0x2B
+  0000002C            00023 EAST_H          EQU     0x2C
+  0000002D            00024 EAST_L          EQU     0x2D
+  0000002E            00025 SOUTH_H         EQU     0x2E
+  0000002F            00026 SOUTH_L         EQU     0x2F
+  00000030            00027 WEST_H          EQU     0x30
+  00000031            00028 WEST_L          EQU     0x31
+                      00029   
+  00000032            00030 NORTH_H_ZERO    EQU     0x32
+  00000033            00031 NORTH_L_ZERO    EQU     0x33
+  00000034            00032 EAST_H_ZERO     EQU     0x34
+  00000035            00033 EAST_L_ZERO     EQU     0x35
+  00000036            00034 SOUTH_H_ZERO    EQU     0x36
+  00000037            00035 SOUTH_L_ZERO    EQU     0x37
+  00000038            00036 WEST_H_ZERO     EQU     0x38
+  00000039            00037 WEST_L_ZERO     EQU     0x39
+                      00038 
+  0000003A            00039 ADDITION_H      EQU     0x3A
+  0000003B            00040 ADDITION_L      EQU     0x3B
+                      00041         ;0x3C IS USED
+  0000003D            00042 ANGLE_H         EQU     0x3D
+  0000003E            00043 ANGLE_L         EQU     0x3E
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00044                                 
+  0000003F            00045 ANGLE_REF_H     EQU     0x3F
+  00000040            00046 ANGLE_REF_L     EQU     0x40
+                      00047         
+  00000041            00048 ANGLE_X_H       EQU     0x41
+  00000042            00049 ANGLE_X_L       EQU     0x42
+                      00050                 
+  00000043            00051 ANGLE_Y_H       EQU     0x43
+  00000044            00052 ANGLE_Y_L       EQU     0x44            
+  00000045            00053 COUNTR          EQU     0x45
+                      00054                 
+  00000046            00055 TEMP_H          EQU     0x46
+  00000047            00056 TEMP_L          EQU     0x47
+                      00057 
+  00000048            00058 COUNTR_H        EQU     0x48
+  00000049            00059 COUNTR_L        EQU     0x49
+                      00060                 
+0000   2???           00061     GOTO        Main
+                      00062     ORG         0x04                        ;origin vector of interrupt
+0004   2???           00063     GOTO        SET_ZERO
+                      00064 
+0005                  00065 Main:
+0005   2???           00066    CALL    INITIALIZE_IC
+0006   2???           00067    CALL    SET_VALUES_TO_ZERO
+0007   2???           00068    CALL    INITIALIZE_ADC
+0008   2???           00069    CALL    INITIALIZE_LCD
+0009   2???           00070    CALL    COMPARE_SETTINGS
+000A   2???           00071    CALL    RX_TX_CONFIG
+000B                  00072 TEMPLATE
+000B   2???           00073    CALL     displayClear
+000C   2???           00074    CALL     GET_VALUES
+                      00075 
+000D   2???           00076    CALL     COMPARE
+000E   2???           00077    CALL     CALCULATIONS
+                      00078                
+000F   2???           00079    CALL     MULTIPLY_X_100
+                      00080    
+0010   1786           00081    BSF      PORTB,7
+                      00082    ;CALL            DEVIDER
+                      00083    ;CALL    PRINT_ANGLE
+                      00084    
+0011   2???           00085    CALL     WAIT  
+0012   2???           00086    CALL     WAIT  
+0013   2???           00087    CALL     WAIT  
+0014   1386           00088    BCF      PORTB,7
+0015   2???           00089    GOTO     TEMPLATE
+                      00090    
+                      00091 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++
+0016                  00092 DEVIDER
+                      00093   
+0016   0008           00094    RETURN
+                      00095 
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00096 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++
+0017                  00097 MULTIPLY_X_100
+0017   3063           00098    MOVLW    d'99'
+0018   00C5           00099    MOVWF    COUNTR   
+                      00100    ;+++++++++++++++++++++++++
+0019   302E           00101    MOVLW    B'00101110'
+001A   00C2           00102    MOVWF    ANGLE_X_L
+                      00103    
+001B   3001           00104    MOVLW    B'00000001'
+001C   00C1           00105    MOVWF    ANGLE_X_H
+                      00106    
+                      00107    ;+++++++++++++++++++++++++
+                      00108    
+001D   0841           00109    MOVF     ANGLE_X_H,0
+001E   00C6           00110    MOVWF    TEMP_H
+001F   0842           00111    MOVF     ANGLE_X_L,0
+0020   00C7           00112    MOVWF    TEMP_L
+                      00113    
+0021                  00114 START_MULTYPLY_L
+0021   0847           00115    MOVF     TEMP_L,0
+0022   07C2           00116    ADDWF    ANGLE_X_L,1
+0023   1803           00117    BTFSC    STATUS,0
+0024   2???           00118             GOTO    ADD_ONE
+0025   2???           00119             GOTO    ADD_ZERO        
+0026                  00120 ADD_ONE 
+0026   3001           00121             MOVLW   d'1'
+0027   2???           00122             GOTO    ADD_TO_H
+0028                  00123 ADD_ZERO
+0028   3000           00124             MOVLW   d'0'
+0029   2???           00125             GOTO    ADD_TO_H
+002A                  00126 ADD_TO_H
+002A   07C1           00127     ADDWF   ANGLE_X_H,1
+002B   3001           00128     MOVLW   d'1'
+002C   02C5           00129     SUBWF   COUNTR,1
+002D   1903           00130     BTFSC   STATUS,2
+002E   2???           00131         GOTO    MULTIPLY_X_100_H            ;MULTIPLY_X_100_H
+002F   2???           00132         GOTO    START_MULTYPLY_L
+                      00133         
+0030                  00134 MULTIPLY_X_100_H
+0030   3063           00135     MOVLW    d'99'
+0031   00C5           00136     MOVWF    COUNTR
+                      00137     
+0032                  00138 START_MULTYPLY_H
+0032   0846           00139         MOVF        TEMP_H,0
+0033   07C1           00140         ADDWF    ANGLE_X_H,1
+                      00141         
+0034   3001           00142         MOVLW   d'1'
+0035   02C5           00143         SUBWF   COUNTR,1
+0036   1903           00144         BTFSC   STATUS,2
+0037   2???           00145             GOTO    END_MULTIPLY            ;MULTIPLY_X_100_H
+0038   2???           00146             GOTO    START_MULTYPLY_H
+0039                  00147 END_MULTIPLY
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0039   2???           00148     CALL    set_DDRAM_address_to_line2
+003A   305A           00149     MOVLW   'Z'
+003B   2???           00150     CALL    PRINT_CHAR
+003C   0841           00151     MOVF    ANGLE_X_H,0
+003D   00A7           00152     MOVWF   HIGH_BIT_COPPY
+                      00153     
+003E   0842           00154     MOVF    ANGLE_X_L,0
+003F   00A8           00155     MOVWF   LOW_BIT_COPPY
+                      00156     
+0040   2???           00157     CALL    PRINT_ER
+0041   2???           00158     CALL    PRINT_ANGLE
+0042   0008           00159    RETURN
+                      00160    
+                      00161 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++
+0043                  00162 RX_TX_CONFIG
+0043   2???           00163    CALL     GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0044   1318           00164         BCF     TXSTA,6         ;Selects 8-bit transmission
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0045   1698           00165         BSF     TXSTA,5         ;Transmit enabled
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0046   1218           00166         BCF     TXSTA,4         ;Asynchronous mode
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0047   1118           00167         BCF     TXSTA,2         ;BRGH{assynchronance low speed mode}
+                      00168         
+0048   301F           00169         MOVLW   d'31'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0049   0099           00170         MOVWF   SPBRG           ;
+004A   2???           00171    CALL     GO_BANK_0
+004B   1798           00172         BSF     RCSTA,7         ;enable serial port
+004C   1618           00173         BSF     RCSTA,4         ;Enables continuous receive
+004D   1598           00174         BSF     RCSTA,3         ;Enables address detection, enables interrupt and load of the receive bu
+                            ffer when RSR<8>is set                  
+                      00175         
+004E   0008           00176         RETURN
+004F                  00177 SEND_DATA
+004F   3041           00178         MOVLW   'A'
+0050   0824           00179         MOVF    K2,0
+0051   2???           00180         CALL    PUSH_DATA
+0052   0825           00181         MOVF    K1,0
+0053   2???           00182         CALL    PUSH_DATA
+0054   0825           00183         MOVF    K1,0
+0055   2???           00184         CALL    PUSH_DATA
+0056   0008           00185         RETURN
+                      00186 ;-------------------------------------------------------------
+0057                  00187 PUSH_DATA
+                      00188         
+0057   2???           00189         CALL    GO_BANK_1
+0058                  00190 CHECK_TSR       
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0058   1C98           00191             BTFSS       TXSTA,1 ;CHECK TSR REGISTER STATE
+0059   2???           00192                 GOTO    CHECK_TSR
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+005A   0000           00193                 NOP
+005B   2???           00194         CALL    GO_BANK_0
+                      00195         
+005C   0099           00196         MOVWF   TXREG
+005D   2???           00197         CALL    WAIT
+                      00198         
+005E   0008           00199         RETURN
+                      00200 ;-------------------------------------------------------------
+005F                  00201 RX_TX_INTERRUPT
+005F   178B           00202         BSF     INTCON,7
+0060   170B           00203         BSF     INTCON,6
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0061   168C           00204         BSF     PIE1,5
+0062   128C           00205         BCF     PIR1,5
+0063   0008           00206         RETURN
+                      00207 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++
+0064                  00208 COMPARE
+0064   2???           00209    CALL     COMPARISION 
+0065   0008           00210    RETURN
+                      00211 ;=====================================
+                      00212    ;SUBROUTING FOR PRINT THE VALUE OF ANGLE.
+0066                  00213 PRINT_ANGLE
+0066   2???           00214     CALL    set_DDRAM_address_to_line2
+                      00215 
+0067   083F           00216     MOVF    ANGLE_REF_H,0
+0068   00A7           00217     MOVWF   HIGH_BIT_COPPY
+                      00218     
+0069   0840           00219     MOVF    ANGLE_REF_L,0
+006A   00A8           00220     MOVWF   LOW_BIT_COPPY
+                      00221     
+006B   2???           00222     CALL    PRINT_ER
+006C   30DF           00223     MOVLW   b'11011111'             ;DEGREES SYMBOL
+006D   2???           00224     CALL    PRINT_CHAR
+006E   0008           00225     RETURN
+                      00226 ;======================================
+                      00227 
+006F                  00228 COMPARISION
+006F   2???           00229    CALL     PRINT_DIRECTION
+0070   2???           00230    CALL     GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0071   1B9C           00231    BTFSC    CMCON,7
+0072   2???           00232         GOTO    WD
+0073   2???           00233         GOTO    ED
+0074                  00234 WD
+0074   2???           00235         CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0075   1B1C           00236         BTFSC    CMCON,6
+0076   2???           00237             GOTO        SW
+0077   2???           00238             GOTO        NW
+                      00239         
+0078                  00240 ED
+0078   2???           00241         CALL        GO_BANK_1
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0079   1B1C           00242         BTFSC    CMCON,6
+007A   2???           00243             GOTO        ES
+007B   2???           00244             GOTO        NE
+                      00245         
+007C                  00246 NE                              ;N AND E ARE MAX
+007C   2???           00247         CALL    GO_BANK_0
+007D   305B           00248         MOVLW   '['
+007E   2???           00249         CALL    PRINT_CHAR
+007F   3053           00250         MOVLW   'S'
+0080   2???           00251         CALL    PRINT_CHAR
+0081   3057           00252         MOVLW   'W'
+0082   2???           00253         CALL    PRINT_CHAR
+0083   305D           00254         MOVLW   ']'
+0084   2???           00255         CALL    PRINT_CHAR
+                      00256         
+0085   01AE           00257         CLRF    SOUTH_H
+0086   01AF           00258         CLRF    SOUTH_L
+0087   01B0           00259         CLRF    WEST_H
+0088   01B1           00260         CLRF    WEST_L
+                      00261         
+0089   30B4           00262         MOVLW   d'180'
+008A   00C0           00263         MOVWF   ANGLE_REF_L
+008B   3000           00264         MOVLW   d'0'
+008C   00BF           00265         MOVWF   ANGLE_REF_H
+                      00266         
+008D   082B           00267         MOVF    NORTH_L,0
+008E   00C4           00268         MOVWF   ANGLE_Y_L
+008F   082A           00269         MOVF    NORTH_H,0
+0090   00C3           00270         MOVWF   ANGLE_Y_H
+                      00271         
+0091   082D           00272         MOVF    EAST_L,0
+0092   00C2           00273         MOVWF   ANGLE_X_L
+0093   082C           00274         MOVF    EAST_H,0
+0094   00C1           00275         MOVWF   ANGLE_X_H
+                      00276         
+0095   2???           00277         GOTO    ENDZ_CMP
+0096                  00278 ES                              ;S AND E ARE MAX
+0096   2???           00279         CALL    GO_BANK_0
+0097   305B           00280         MOVLW   '['
+0098   2???           00281         CALL    PRINT_CHAR
+0099   304E           00282         MOVLW   'N'
+009A   2???           00283         CALL    PRINT_CHAR
+009B   3057           00284         MOVLW   'W'
+009C   2???           00285         CALL    PRINT_CHAR
+009D   305D           00286         MOVLW   ']'
+009E   2???           00287         CALL    PRINT_CHAR
+                      00288         
+009F   01AA           00289         CLRF    NORTH_H
+00A0   01AB           00290         CLRF    NORTH_L
+00A1   01B0           00291         CLRF    WEST_H
+00A2   01B1           00292         CLRF    WEST_L
+                      00293         
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00A3   300E           00294         MOVLW   b'00001110'
+00A4   00C0           00295         MOVWF   ANGLE_REF_L
+00A5   3001           00296         MOVLW   d'00000001'
+00A6   00BF           00297         MOVWF   ANGLE_REF_H
+                      00298         
+00A7   082D           00299         MOVF    EAST_L,0
+00A8   00C4           00300         MOVWF   ANGLE_Y_L
+00A9   082C           00301         MOVF    EAST_H,0
+00AA   00C3           00302         MOVWF   ANGLE_Y_H
+                      00303         
+00AB   082F           00304         MOVF    SOUTH_L,0
+00AC   00C2           00305         MOVWF   ANGLE_X_L
+00AD   082E           00306         MOVF    SOUTH_H,0
+00AE   00C1           00307         MOVWF   ANGLE_X_H
+                      00308         
+00AF   2???           00309         GOTO    ENDZ_CMP
+00B0                  00310 NW                              ;N AND W ARE MAX
+00B0   2???           00311         CALL    GO_BANK_0
+00B1   305B           00312         MOVLW   '['
+00B2   2???           00313         CALL    PRINT_CHAR
+00B3   3045           00314         MOVLW   'E'
+00B4   2???           00315         CALL    PRINT_CHAR
+00B5   3053           00316         MOVLW   'S'
+00B6   2???           00317         CALL    PRINT_CHAR
+00B7   305D           00318         MOVLW   ']'
+00B8   2???           00319         CALL    PRINT_CHAR
+                      00320         
+00B9   01AE           00321         CLRF    SOUTH_H
+00BA   01AF           00322         CLRF    SOUTH_L
+00BB   01AC           00323         CLRF    EAST_H
+00BC   01AD           00324         CLRF    EAST_L
+                      00325         
+00BD   305A           00326         MOVLW   d'90'
+00BE   00C0           00327         MOVWF   ANGLE_REF_L
+00BF   3000           00328         MOVLW   d'0'
+00C0   00BF           00329         MOVWF   ANGLE_REF_H
+                      00330         
+00C1   0831           00331         MOVF    WEST_L,0
+00C2   00C4           00332         MOVWF   ANGLE_Y_L
+00C3   0830           00333         MOVF    WEST_H,0
+00C4   00C3           00334         MOVWF   ANGLE_Y_H
+                      00335         
+00C5   082B           00336         MOVF    NORTH_L,0
+00C6   00C2           00337         MOVWF   ANGLE_X_L
+00C7   082A           00338         MOVF    NORTH_H,0
+00C8   00C1           00339         MOVWF   ANGLE_X_H
+                      00340         
+00C9   2???           00341         GOTO    ENDZ_CMP
+00CA                  00342 SW                              ;S AND W ARE MAX
+00CA   2???           00343         CALL    GO_BANK_0
+00CB   305B           00344         MOVLW   '['
+00CC   2???           00345         CALL    PRINT_CHAR
+                      00346                 
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00CD   304E           00347         MOVLW   'N'
+00CE   2???           00348         CALL    PRINT_CHAR
+00CF   3045           00349         MOVLW   'E'
+00D0   2???           00350         CALL    PRINT_CHAR
+00D1   305D           00351         MOVLW   ']'
+00D2   2???           00352         CALL    PRINT_CHAR
+                      00353         
+00D3   01AA           00354         CLRF    NORTH_H
+00D4   01AB           00355         CLRF    NORTH_L
+00D5   01AC           00356         CLRF    EAST_H
+00D6   01AD           00357         CLRF    EAST_L
+                      00358         
+                      00359         
+00D7   3000           00360         MOVLW   d'0'
+00D8   00C0           00361         MOVWF   ANGLE_REF_L
+00D9   3000           00362         MOVLW   d'0'
+00DA   00BF           00363         MOVWF   ANGLE_REF_H
+                      00364         
+00DB   082F           00365         MOVF    SOUTH_L,0
+00DC   00C4           00366         MOVWF   ANGLE_Y_L
+00DD   082E           00367         MOVF    SOUTH_H,0
+00DE   00C3           00368         MOVWF   ANGLE_Y_H
+                      00369         
+00DF   0831           00370         MOVF    WEST_L,0
+00E0   00C2           00371         MOVWF   ANGLE_X_L
+00E1   0830           00372         MOVF    WEST_H,0
+00E2   00C1           00373         MOVWF   ANGLE_X_H
+                      00374         
+00E3   2???           00375         GOTO    ENDZ_CMP
+00E4                  00376 ENDZ_CMP
+00E4   0008           00377    RETURN
+                      00378 ;------------------------------------------
+                      00379 
+00E5                  00380 COMPARE_SETTINGS
+00E5   2???           00381    CALL     GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00E6   129C           00382         BCF CMCON,5
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00E7   121C           00383         BCF CMCON,4
+                      00384         
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00E8   111C           00385         BCF CMCON,2
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00E9   149C           00386         BSF CMCON,1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+00EA   101C           00387         BCF CMCON,0
+00EB   2???           00388    CALL     GO_BANK_0
+                      00389    
+00EC   0008           00390    RETURN
+                      00391 ;------------------------------------------   
+00ED                  00392 CALCULATIONS
+00ED   2???           00393     CALL    SUBSTRACT
+00EE   2???           00394     CALL    ADDITION_OF_FOUR    
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00EF   0008           00395     RETURN
+                      00396 ;------------------------------------------
+                      00397    
+00F0                  00398 PRINT_ER
+                      00399    ;TO USE PRINT_ER FUNCTION
+                      00400     ;HIGH_BIT_COPPY AND LOW_BIT_COPPY REGISTERS SHOULD BE USE 
+                      00401     
+00F0   2???           00402     GOTO    PROCESS_HIGH_VALUE
+00F1                  00403 XP
+00F1   2???           00404     CALL    PRINT_K_VALUES
+00F2   2???           00405     CALL    K_VALUES_TO_ZERO
+                      00406    ;CALL    set_DDRAM_address_to_line1
+                      00407 
+00F3   0008           00408     RETURN
+                      00409 ;------------------------------------------
+                      00410 
+00F4                  00411 ADDITION_ZERO
+00F4   01BA           00412     CLRF    ADDITION_H
+00F5   01BB           00413     CLRF    ADDITION_L
+                      00414 
+00F6   0008           00415     RETURN
+                      00416 ;------------------------------------------
+                      00417 
+00F7                  00418 ADDITION_OF_FOUR
+00F7   2???           00419     CALL    ADDITION_ZERO  
+00F8   1003           00420     BCF     STATUS,0
+                      00421 
+00F9   082B           00422     MOVF    NORTH_L,0
+00FA   07BB           00423     ADDWF   ADDITION_L,1
+00FB   1803           00424     BTFSC   STATUS,0
+00FC   2???           00425             GOTO    A1N
+00FD   2???           00426             GOTO    A2N
+00FE                  00427 A1N
+00FE   3001           00428             MOVLW   d'1'
+00FF   2???           00429             GOTO    T2N
+0100                  00430 A2N
+0100   3000           00431             MOVLW   d'0'
+0101   2???           00432             GOTO    T2N
+0102                  00433 T2N
+0102   07BA           00434     ADDWF   ADDITION_H,1
+0103   082A           00435     MOVF    NORTH_H,0
+0104   07BA           00436     ADDWF   ADDITION_H,1
+                      00437 ;-----------------------------------------------------
+                      00438     
+0105   082D           00439     MOVF    EAST_L,0
+0106   07BB           00440     ADDWF   ADDITION_L,1
+0107   1803           00441     BTFSC   STATUS,0
+0108   2???           00442             GOTO    A1E
+0109   2???           00443             GOTO    A2E
+010A                  00444 A1E
+010A   3001           00445             MOVLW   d'1'
+010B   2???           00446             GOTO    T2E
+010C                  00447 A2E
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+010C   3000           00448             MOVLW   d'0'
+010D   2???           00449             GOTO    T2E
+010E                  00450 T2E
+010E   07BA           00451     ADDWF   ADDITION_H,1
+010F   082C           00452     MOVF    EAST_H,0
+0110   07BA           00453     ADDWF   ADDITION_H,1
+                      00454 ;-----------------------------------------------------
+                      00455     
+0111   082F           00456     MOVF    SOUTH_L,0
+0112   07BB           00457     ADDWF   ADDITION_L,1
+0113   1803           00458     BTFSC   STATUS,0
+0114   2???           00459             GOTO    A1S
+0115   2???           00460             GOTO    A2S
+0116                  00461 A1S
+0116   3001           00462             MOVLW   d'1'
+0117   2???           00463             GOTO    T2S
+0118                  00464 A2S
+0118   3000           00465             MOVLW   d'0'
+0119   2???           00466             GOTO    T2S
+011A                  00467 T2S
+011A   07BA           00468     ADDWF   ADDITION_H,1
+011B   082E           00469     MOVF    SOUTH_H,0
+011C   07BA           00470     ADDWF   ADDITION_H,1
+                      00471 
+                      00472 ;-----------------------------------------------------
+                      00473 
+011D   0831           00474     MOVF    WEST_L,0
+011E   07BB           00475     ADDWF   ADDITION_L,1
+011F   1803           00476     BTFSC   STATUS,0
+0120   2???           00477             GOTO    A1W
+0121   2???           00478             GOTO    A2W
+0122                  00479 A1W
+0122   3001           00480             MOVLW   d'1'
+0123   2???           00481             GOTO    T2W
+0124                  00482 A2W
+0124   3000           00483             MOVLW   d'0'
+0125   2???           00484             GOTO    T2W
+0126                  00485 T2W    
+0126   07BA           00486             ADDWF   ADDITION_H,1
+0127   0830           00487     MOVF    WEST_H,0
+0128   07BA           00488     ADDWF   ADDITION_H,1
+                      00489     ;=====================================
+                      00490     ;MOVF    ADDITION_H,0
+                      00491     ;MOVWF   HIGH_BIT_COPPY
+                      00492     
+                      00493     ;MOVF    ADDITION_L,0
+                      00494     ;MOVWF   LOW_BIT_COPPY
+                      00495     
+                      00496     ;CALL    PRINT_ER
+                      00497    ;======================================
+                      00498    
+0129   0008           00499     RETURN
+012A                  00500 SUBSTRACT
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00501         ;BCF    INTCON,7
+012A   2???           00502         CALL    SUBSTRACT_N
+012B   2???           00503         CALL    SUBSTRACT_E
+012C   2???           00504         CALL    SUBSTRACT_S
+012D   2???           00505         CALL    SUBSTRACT_W
+                      00506         ;BSF    INTCON,7
+012E   0008           00507         RETURN
+                      00508 
+012F                  00509 SUBSTRACT_N
+                      00510 
+012F   0833           00511         MOVF    NORTH_L_ZERO,0
+0130   02AB           00512         SUBWF   NORTH_L,1
+                      00513         
+0131   1903           00514         BTFSC   STATUS,2
+0132   3001           00515             MOVLW   d'1'
+0133   3000           00516             MOVLW   d'0'
+0134   02AA           00517         SUBWF   NORTH_H,1
+0135   0832           00518         MOVF    NORTH_H_ZERO,0
+0136   02AA           00519         SUBWF   NORTH_H,1
+0137   0008           00520     RETURN
+                      00521     
+                      00522     ;------------------------------------------------------------------------------
+0138                  00523 SUBSTRACT_E
+                      00524 
+0138   0835           00525         MOVF    EAST_L_ZERO,0
+0139   02AD           00526         SUBWF   EAST_L,1
+                      00527         
+013A   1903           00528         BTFSC   STATUS,2
+013B   3001           00529             MOVLW   d'1'
+013C   3000           00530             MOVLW   d'0'
+013D   02AC           00531         SUBWF   EAST_H,1
+                      00532         
+013E   0834           00533         MOVF    EAST_H_ZERO,0
+013F   02AC           00534         SUBWF   EAST_H,1
+0140   0008           00535         RETURN
+                      00536 
+                      00537     ;------------------------------------------------------------------------------
+0141                  00538 SUBSTRACT_S
+                      00539         
+0141   0837           00540         MOVF    SOUTH_L_ZERO,0
+0142   02AF           00541         SUBWF   SOUTH_L,1
+                      00542         
+0143   1903           00543         BTFSC   STATUS,2
+0144   3001           00544             MOVLW   d'1'
+0145   3000           00545             MOVLW   d'0'
+0146   02AE           00546         SUBWF   SOUTH_H,1
+                      00547         
+0147   0836           00548         MOVF    SOUTH_H_ZERO,0
+0148   02AE           00549         SUBWF   SOUTH_H,1
+0149   0008           00550         RETURN
+                      00551     
+                      00552     ;------------------------------------------------------------------------------
+014A                  00553 SUBSTRACT_W
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00554         
+014A   0839           00555         MOVF    WEST_L_ZERO,0
+014B   02B1           00556         SUBWF   WEST_L,1
+                      00557         
+014C   1903           00558         BTFSC   STATUS,2
+014D   3001           00559             MOVLW   d'1'
+014E   3000           00560             MOVLW   d'0'
+014F   02B0           00561         SUBWF   WEST_H,1
+                      00562         
+0150   0838           00563         MOVF    WEST_H_ZERO,0
+0151   02B0           00564         SUBWF   WEST_H,1
+0152   0008           00565         RETURN
+                      00566     
+                      00567     ;------------------------------------------------------------------------------
+                      00568 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++
+0153                  00569 SET_VALUES_TO_ZERO
+0153   3000           00570     MOVLW    b'00000000'
+0154   00B2           00571     MOVWF    NORTH_H_ZERO
+0155   3000           00572     MOVLW    b'00000000'
+0156   00B3           00573     MOVWF    NORTH_L_ZERO
+                      00574     
+0157   3000           00575     MOVLW    b'00000000'
+0158   00B4           00576     MOVWF    EAST_H_ZERO
+0159   3000           00577     MOVLW    b'00000000'
+015A   00B5           00578     MOVWF    EAST_L_ZERO
+                      00579     
+015B   3000           00580     MOVLW    b'00000000'
+015C   00B6           00581     MOVWF    SOUTH_H_ZERO
+015D   3000           00582     MOVLW    b'00000000'
+015E   00B7           00583     MOVWF    SOUTH_L_ZERO
+                      00584     
+015F   3000           00585     MOVLW    b'00000000'
+0160   00B8           00586     MOVWF    WEST_H_ZERO
+0161   3000           00587     MOVLW    b'00000000'
+0162   00B9           00588     MOVWF    WEST_L_ZERO
+0163   0008           00589    RETURN
+                      00590 
+                      00591     
+                      00592     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+0164                  00593 SET_ZERO
+0164   138B           00594         BCF         INTCON,7
+0165   2???           00595         GOTO        PRINT_SET_ZERO
+0166                  00596 RET_POINT
+0166   108B           00597         BCF         INTCON,1
+0167   178B           00598         BSF         INTCON,7
+0168   0009           00599         RETFIE
+                      00600     
+0169                  00601 PRINT_SET_ZERO
+0169   2???           00602         CALL    set_DDRAM_address_to_line1
+016A   3053           00603         MOVLW   'S'
+016B   2???           00604         CALL    PRINT_CHAR
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+016C   3045           00605         MOVLW   'E'
+016D   2???           00606         CALL    PRINT_CHAR
+016E   3054           00607         MOVLW   'T'
+016F   2???           00608         CALL    PRINT_CHAR
+0170   3020           00609         MOVLW   ' '
+0171   2???           00610         CALL    PRINT_CHAR
+0172   305A           00611         MOVLW   'Z'
+0173   2???           00612         CALL    PRINT_CHAR
+0174   3045           00613         MOVLW   'E'
+0175   2???           00614         CALL    PRINT_CHAR
+0176   3052           00615         MOVLW   'R'
+0177   2???           00616         CALL    PRINT_CHAR
+0178   304F           00617         MOVLW   'O'
+0179   2???           00618         CALL    PRINT_CHAR
+017A   3020           00619         MOVLW   ' '
+017B   2???           00620         CALL    PRINT_CHAR
+                      00621         
+017C   2???           00622         CALL    GET_ZERO
+017D   2???           00623         CALL    WAIT
+017E   2???           00624         CALL    displayClear
+017F   2???           00625         GOTO    RET_POINT
+                      00626     
+0180                  00627 GET_ZERO
+0180   2???           00628         CALL    SET_ANALOG_CH0
+0181   2???           00629         CALL    DELAY_50_MS
+0182   2???           00630         CALL    START_CONVERSON
+                      00631         
+0183                  00632 LOOP_N
+0183   191F           00633         BTFSC   ADCON0,2
+0184   2???           00634             GOTO    LOOP_N
+0185   081E           00635                 MOVF    ADRESH,0
+0186   00B2           00636                 MOVWF   NORTH_H_ZERO
+0187   2???           00637             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0188   081E           00638                 MOVF    ADRESL,0
+0189   2???           00639             CALL        GO_BANK_0
+018A   00B3           00640                 MOVWF   NORTH_L_ZERO
+018B   304E           00641         MOVLW   'N'
+018C   2???           00642         CALL    PRINT_CHAR
+                      00643         ;-----------------------------
+018D   2???           00644         CALL    SET_ANALOG_CH1
+018E   2???           00645         CALL    DELAY_50_MS
+018F   2???           00646         CALL    START_CONVERSON
+0190                  00647 LOOP_E
+0190   191F           00648         BTFSC   ADCON0,2
+0191   2???           00649             GOTO    LOOP_E
+0192   081E           00650                 MOVF    ADRESH,0
+0193   00B4           00651                 MOVWF   EAST_H_ZERO
+0194   2???           00652             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0195   081E           00653                 MOVF    ADRESL,0
+0196   2???           00654             CALL        GO_BANK_0
+0197   00B5           00655                 MOVWF   EAST_L_ZERO
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 14
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0198   3045           00656         MOVLW   'E'
+0199   2???           00657         CALL    PRINT_CHAR
+                      00658         ;-----------------------------
+019A   2???           00659         CALL    SET_ANALOG_CH3
+019B   2???           00660         CALL    DELAY_50_MS
+019C   2???           00661         CALL    START_CONVERSON
+019D                  00662 LOOP_S
+019D   191F           00663         BTFSC   ADCON0,2
+019E   2???           00664             GOTO    LOOP_S
+019F   081E           00665                 MOVF    ADRESH,0
+01A0   00B6           00666                 MOVWF   SOUTH_H_ZERO
+01A1   2???           00667             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01A2   081E           00668                 MOVF    ADRESL,0
+01A3   2???           00669             CALL        GO_BANK_0
+01A4   00B7           00670                 MOVWF   SOUTH_L_ZERO
+01A5   3053           00671         MOVLW   'S'
+01A6   2???           00672         CALL    PRINT_CHAR
+                      00673         ;-----------------------------
+01A7   2???           00674         CALL    SET_ANALOG_CH2
+01A8   2???           00675         CALL    DELAY_50_MS
+01A9   2???           00676         CALL    START_CONVERSON
+01AA                  00677 LOOP_W
+01AA   191F           00678         BTFSC   ADCON0,2
+01AB   2???           00679             GOTO    LOOP_W
+01AC   081E           00680                 MOVF    ADRESH,0
+01AD   00B8           00681                 MOVWF   WEST_H_ZERO
+01AE   2???           00682             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01AF   081E           00683                 MOVF    ADRESL,0
+01B0   2???           00684             CALL        GO_BANK_0
+01B1   00B9           00685                 MOVWF   WEST_L_ZERO
+01B2   3057           00686         MOVLW   'W'
+01B3   2???           00687         CALL    PRINT_CHAR
+01B4   0008           00688         RETURN
+                      00689    ;-----------------------------
+                      00690         
+                      00691     
+                      00692 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++
+                      00693     
+01B5                  00694 GET_VALUES
+                      00695    
+01B5   2???           00696         CALL    ADC_ON
+01B6   2???           00697         CALL    SET_ANALOG_CH0
+01B7   2???           00698         CALL    DELAY_50_MS
+01B8   2???           00699         CALL    START_CONVERSON
+                      00700         
+01B9   2???           00701         GOTO    LOOP_NV
+01BA                  00702 LOOP_NV
+01BA   191F           00703         BTFSC   ADCON0,2
+01BB   2???           00704             GOTO    LOOP_NV
+01BC   0000           00705             NOP
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 15
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01BD   081E           00706                 MOVF    ADRESH,0
+01BE   00AA           00707                 MOVWF   NORTH_H
+                      00708         
+01BF   2???           00709             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01C0   081E           00710                 MOVF    ADRESL,0
+01C1   2???           00711             CALL        GO_BANK_0
+01C2   00AB           00712                 MOVWF   NORTH_L
+                      00713         
+01C3   2???           00714         CALL    SET_ANALOG_CH1
+01C4   2???           00715         CALL DELAY_50_MS
+01C5   2???           00716         CALL    START_CONVERSON
+01C6                  00717 LOOP_EV
+01C6   191F           00718         BTFSC   ADCON0,2
+01C7   2???           00719             GOTO    LOOP_EV
+01C8   0000           00720             NOP
+01C9   081E           00721                 MOVF    ADRESH,0
+01CA   00AC           00722                 MOVWF   EAST_H
+01CB   2???           00723             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01CC   081E           00724                 MOVF    ADRESL,0
+01CD   2???           00725             CALL        GO_BANK_0
+01CE   00AD           00726                 MOVWF   EAST_L
+                      00727 ;-----------------------------
+01CF   2???           00728         CALL    SET_ANALOG_CH3
+01D0   2???           00729         CALL DELAY_50_MS
+01D1   2???           00730         CALL    START_CONVERSON
+                      00731         
+01D2                  00732 LOOP_SV
+01D2   191F           00733         BTFSC   ADCON0,2
+01D3   2???           00734             GOTO    LOOP_SV
+01D4   0000           00735             NOP
+01D5   081E           00736                 MOVF    ADRESH,0
+01D6   00AE           00737                 MOVWF   SOUTH_H
+01D7   2???           00738             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01D8   081E           00739                 MOVF    ADRESL,0
+01D9   2???           00740             CALL        GO_BANK_0
+01DA   00AF           00741                 MOVWF   SOUTH_L
+01DB   2???           00742         CALL    SET_ANALOG_CH2
+01DC   2???           00743         CALL DELAY_50_MS
+01DD   2???           00744         CALL    START_CONVERSON
+                      00745         
+01DE                  00746 LOOP_WV
+01DE   191F           00747         BTFSC   ADCON0,2
+01DF   2???           00748             GOTO    LOOP_WV
+01E0   0000           00749             NOP
+01E1   081E           00750                 MOVF    ADRESH,0
+01E2   00B0           00751                 MOVWF   WEST_H
+01E3   2???           00752             CALL        GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01E4   081E           00753                 MOVF    ADRESL,0
+01E5   2???           00754             CALL        GO_BANK_0
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 16
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01E6   00B1           00755                 MOVWF   WEST_L
+01E7                  00756 P11
+01E7   0008           00757         RETURN
+                      00758     ;-----------------------------
+                      00759     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+                      00760     
+                      00761     ;subroutings_for_INITIALIZE_ADC
+                      00762     
+01E8                  00763 INITIALIZE_ADC
+01E8   2???           00764     CALL    CONFIG_ADC_MODULE
+01E9   2???           00765     CALL    CONFIG_ADC_INTERUPT
+01EA   2???           00766     CALL    DELAY_50_MS             ;WAIT THE REQURED ACQUISITION TIME
+01EB   2???           00767     CALL    START_CONVERSON
+01EC   0008           00768     RETURN
+                      00769     ;______________________________________
+01ED                  00770 CONFIG_ADC_MODULE
+01ED   2???           00771         CALL    INITIALIZE_ADC_SETTING
+01EE   2???           00772         CALL    ADC_ON
+01EF   0008           00773     RETURN
+                      00774     ;______________________________________
+01F0                  00775 INITIALIZE_ADC_SETTING
+01F0   2???           00776         CALL    GO_BANK_0
+01F1   179F           00777             BSF ADCON0,7    ;CLOCK
+01F2   131F           00778             BCF ADCON0,6    ;CLOCK
+01F3   2???           00779         CALL    GO_BANK_1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01F4   171F           00780             BSF ADCON1,6    ;CLOCK
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01F5   179F           00781             BSF ADCON1,7    ;RESULT_FORMAT
+                      00782                             ;ADFM: A/D Result Format Select bit
+                      00783                             ;1 = Right justified. Six (6) Most Significant bits of ADRESH are read as ?0
+                            ?.
+                      00784                             ;0 = Left justified. Six (6) Least Significant bits of ADRESL are read as ?0
+                            ?.
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01F6   119F           00785             BCF ADCON1,3    
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01F7   111F           00786             BCF ADCON1,2
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01F8   149F           00787             BSF ADCON1,1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+01F9   101F           00788             BCF ADCON1,0
+                      00789             
+01FA   2???           00790         CALL    GO_BANK_0
+01FB   0008           00791         RETURN
+                      00792     
+01FC                  00793 SET_ANALOG_CH0             ;NORTH
+01FC   119F           00794             BCF  ADCON0,3
+01FD   121F           00795             BCF  ADCON0,4
+01FE   129F           00796             BCF  ADCON0,5  
+01FF   0008           00797     RETURN
+                      00798     
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 17
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0200                  00799 SET_ANALOG_CH1              ;EAST
+0200   159F           00800             BSF  ADCON0,3
+0201   121F           00801             BCF  ADCON0,4
+0202   129F           00802             BCF  ADCON0,5 
+0203   0008           00803     RETURN
+                      00804     
+0204                  00805 SET_ANALOG_CH2              ;WEST
+0204   119F           00806             BCF  ADCON0,3
+0205   161F           00807             BSF  ADCON0,4
+0206   129F           00808             BCF  ADCON0,5 
+0207   0008           00809     RETURN
+                      00810     
+0208                  00811 SET_ANALOG_CH3              ;SOUTH
+0208   159F           00812             BSF  ADCON0,3
+0209   161F           00813             BSF  ADCON0,4
+020A   129F           00814             BCF  ADCON0,5 
+020B   0008           00815     RETURN
+                      00816     
+                      00817     ;______________________________________
+020C                  00818 ADC_ON
+020C   2???           00819         CALL    GO_BANK_0
+020D   141F           00820         BSF     ADCON0,0        
+020E   0008           00821     RETURN
+                      00822     
+020F                  00823 ADC_OFF
+020F   2???           00824         CALL    GO_BANK_0
+0210   101F           00825         BCF     ADCON0,0
+0211   0008           00826     RETURN
+                      00827     ;______________________________________
+0212                  00828 CONFIG_ADC_INTERUPT
+0212   130C           00829         BCF     PIR1,6      ;ADIF(1=CONV CMPLTED,0=NOT COMPLETE)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0213   170C           00830         BSF     PIE1,6      ;1 = Enables the A/D converter interrupt/0 = Disables the A/D converter inte
+                            rrupt
+0214   170B           00831         BSF     INTCON,6    ;1 = Enables all unmasked peripheral interrupts/0 = Disables all peripheral 
+                            interrupts
+0215   178B           00832         BSF     INTCON,7    ;1 = Enables all unmasked interrupts/0 = Disables all interrupts
+0216   0000           00833         NOP
+0217   0008           00834     RETURN
+                      00835     ;______________________________________
+0218                  00836 START_CONVERSON
+                      00837         ;CALL   GO_BANK_0
+0218   151F           00838         BSF     ADCON0,2
+                      00839         ;CALL   WAIT
+                      00840         ;CALL   WAIT
+                      00841 
+0219   0008           00842     RETURN
+                      00843     
+021A                  00844 END_CONVERSON
+021A   111F           00845         BCF     ADCON0,2
+021B   0008           00846     RETURN
+                      00847 
+                      00848     
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 18
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00849     
+                      00850     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+021C                  00851 K_VALUES_TO_ZERO
+021C   3000           00852         MOVLW   b'00000000'
+021D   00BC           00853         MOVWF   K4
+                      00854         
+021E   3000           00855         MOVLW   b'00000000'
+021F   00A3           00856         MOVWF   K3
+                      00857         
+0220   3000           00858         MOVLW   b'00000000'
+0221   00A4           00859         MOVWF   K2
+                      00860         
+0222   3000           00861         MOVLW   b'00000000'
+0223   00A5           00862         MOVWF   K1
+                      00863         
+0224   3000           00864         MOVLW   b'00000000'
+0225   00A6           00865         MOVWF   K0
+0226   0008           00866     RETURN
+                      00867     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+                      00868 
+0227                  00869 PROCESS_HIGH_VALUE
+                      00870         ;THIS VALUES ONLY FOR THIS PROG: TESTING
+0227   2???           00871         GOTO    FIND_KH2
+0228                  00872 FIND_KH2
+0228   3064           00873         MOVLW   d'100'
+0229   0227           00874         SUBWF   HIGH_BIT_COPPY,0
+022A   1803           00875         BTFSC   STATUS,0
+022B   2???           00876             GOTO        CHECK_POIT_2H   
+022C   2???           00877             GOTO        FIND_KH1                
+                      00878             
+022D                  00879 FIND_KH1
+022D   300A           00880         MOVLW   d'10'
+022E   0227           00881         SUBWF   HIGH_BIT_COPPY,0
+022F   1803           00882         BTFSC   STATUS,0
+0230   2???           00883             GOTO        CHECK_POIT_1H   
+0231   2???           00884             GOTO        FIND_KH0
+                      00885 
+0232                  00886 FIND_KH0
+0232   3001           00887         MOVLW   d'1'
+0233   0227           00888         SUBWF   HIGH_BIT_COPPY,0
+0234   1803           00889         BTFSC   STATUS,0
+0235   2???           00890             GOTO        CHECK_POIT_0H
+0236   2???           00891             GOTO        END_3H
+                      00892             
+0237                  00893 END_3H
+0237   2???           00894             GOTO    PROCESS_LOWER_VALUE
+                      00895 
+                      00896         ;WHEN EXITING FROM "GOTO END_3" IT IS NOT CALCULATE THAT ONE SO NEEDS TO ADD IT
+                      00897         ;CALL   K0_PLUS_ONE
+                      00898     ;GOTO    UP
+                      00899     ;______________________________    
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 19
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0238                  00900 CHECK_POIT_2H
+0238   00A7           00901         MOVWF   HIGH_BIT_COPPY
+0239   2???           00902         CALL    K2_PLUS_SIX
+023A   2???           00903         CALL    K3_PLUS_FIVE
+023B   2???           00904         CALL    K4_PLUS_TWO
+                      00905         
+023C   2???           00906     GOTO    FIND_KH2
+                      00907     ;______________________________ 
+023D                  00908 CHECK_POIT_1H
+023D   00A7           00909         MOVWF   HIGH_BIT_COPPY
+023E   2???           00910         CALL    K1_PLUS_SIX
+023F   2???           00911         CALL    K2_PLUS_FIVE
+0240   2???           00912         CALL    K3_PLUS_TWO
+                      00913         
+0241   2???           00914     GOTO    FIND_KH1
+                      00915     ;______________________________ 
+0242                  00916 CHECK_POIT_0H
+0242   00A7           00917         MOVWF   HIGH_BIT_COPPY
+0243   2???           00918         CALL    K0_PLUS_SIX
+0244   2???           00919         CALL    K1_PLUS_FIVE
+0245   2???           00920         CALL    K2_PLUS_TWO
+                      00921         
+0246   2???           00922     GOTO    FIND_KH0
+                      00923     
+                      00924    
+                      00925     ;______________________________
+                      00926     ;PROCESS_LOWER_VALUE
+                      00927     
+0247                  00928 PROCESS_LOWER_VALUE
+                      00929     ;IN HERE SET ADRESL VALUE TO LOW_BIT_COPPY
+                      00930         
+0247   2???           00931         GOTO    FIND_K2
+                      00932         
+0248                  00933 FIND_K2
+0248   3064           00934         MOVLW   d'100'
+0249   0228           00935         SUBWF   LOW_BIT_COPPY,0
+024A   1803           00936         BTFSC   STATUS,0
+024B   2???           00937             GOTO        CHECK_POIT_2    
+024C   2???           00938             GOTO        FIND_K1         
+                      00939             
+024D                  00940 FIND_K1
+024D   300A           00941         MOVLW   d'10'
+024E   0228           00942         SUBWF   LOW_BIT_COPPY,0
+024F   1803           00943         BTFSC   STATUS,0
+0250   2???           00944             GOTO        CHECK_POIT_1    
+0251   2???           00945             GOTO        FIND_K0
+                      00946 
+0252                  00947 FIND_K0
+0252   3001           00948         MOVLW   d'1'
+0253   0228           00949         SUBWF   LOW_BIT_COPPY,0
+0254   1803           00950         BTFSC   STATUS,0
+0255   2???           00951             GOTO        CHECK_POIT_0
+0256   2???           00952             GOTO        END_3
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 20
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00953             
+0257                  00954 END_3
+                      00955         
+0257   2???           00956     GOTO    XP
+                      00957     ;______________________________    
+0258                  00958 CHECK_POIT_2
+0258   00A8           00959         MOVWF   LOW_BIT_COPPY
+0259   2???           00960         CALL    K2_PLUS_ONE
+025A   2???           00961     GOTO    FIND_K2
+                      00962     ;______________________________ 
+025B                  00963 CHECK_POIT_1
+025B   00A8           00964         MOVWF   LOW_BIT_COPPY
+025C   2???           00965         CALL    K1_PLUS_ONE
+025D   2???           00966     GOTO    FIND_K1
+                      00967     ;______________________________ 
+025E                  00968 CHECK_POIT_0
+025E   00A8           00969         MOVWF   LOW_BIT_COPPY
+025F   2???           00970         CALL    K0_PLUS_ONE
+0260   2???           00971     GOTO    FIND_K0
+                      00972     
+                      00973     ;______________________________
+0261                  00974 K0_PLUS_ONE
+0261   3001           00975         MOVLW   d'1'
+0262   07A6           00976         ADDWF   K0,1
+0263   2???           00977         GOTO    K0_CHECK
+0264                  00978 K0_PLUS_TWO
+0264   3002           00979         MOVLW   d'2'
+0265   07A6           00980         ADDWF   K0,1
+0266   2???           00981         GOTO    K0_CHECK
+0267                  00982 K0_PLUS_FIVE
+0267   3005           00983         MOVLW   d'5'
+0268   07A6           00984         ADDWF   K0,1
+0269   2???           00985         GOTO    K0_CHECK
+026A                  00986 K0_PLUS_SIX
+026A   3006           00987         MOVLW   d'6'
+026B   07A6           00988         ADDWF   K0,1
+026C   2???           00989         GOTO    K0_CHECK
+026D                  00990 K0_CHECK
+026D   300A           00991         MOVLW   d'10'
+026E   0226           00992         SUBWF   K0,0
+026F   1883           00993         BTFSC   STATUS,1
+0270   2???           00994            GOTO    K0_MIN_TEN
+0271   2???           00995            GOTO    END_2
+                      00996             
+0272                  00997 K0_MIN_TEN
+0272   300A           00998                 MOVLW   b'00001010'
+0273   02A6           00999                 SUBWF   K0,1
+0274   2???           01000                 GOTO    K1_PLUS_ONE
+0275   2???           01001                 GOTO    END_2
+                      01002     
+0276                  01003 K1_PLUS_ONE
+0276   3001           01004         MOVLW   d'1'
+0277   07A5           01005         ADDWF   K1,1
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 21
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0278   2???           01006         GOTO    K1_CHECK
+0279                  01007 K1_PLUS_TWO
+0279   3002           01008         MOVLW   d'2'
+027A   07A5           01009         ADDWF   K1,1
+027B   2???           01010         GOTO    K1_CHECK
+027C                  01011 K1_PLUS_FIVE
+027C   3005           01012         MOVLW   d'5'
+027D   07A5           01013         ADDWF   K1,1
+027E   2???           01014         GOTO    K1_CHECK
+027F                  01015 K1_PLUS_SIX
+027F   3006           01016         MOVLW   d'6'
+0280   07A5           01017         ADDWF   K1,1
+0281   2???           01018         GOTO    K1_CHECK
+0282                  01019 K1_CHECK
+0282   300A           01020         MOVLW   d'10'
+0283   0225           01021         SUBWF   K1,0
+0284   1883           01022         BTFSC   STATUS,1
+0285   2???           01023            GOTO    K1_MIN_TEN
+0286   2???           01024            GOTO    END_2
+                      01025             
+0287                  01026 K1_MIN_TEN
+0287   300A           01027                 MOVLW   b'00001010'
+0288   02A5           01028                 SUBWF   K1,1
+0289   2???           01029                 GOTO    K2_PLUS_ONE
+028A   2???           01030                 GOTO    END_2
+                      01031            
+028B                  01032 K2_PLUS_ONE
+028B   3001           01033         MOVLW   d'1'
+028C   07A4           01034         ADDWF   K2,1
+028D   2???           01035         GOTO    K2_CHECK
+028E                  01036 K2_PLUS_TWO
+028E   3002           01037         MOVLW   d'2'
+028F   07A4           01038         ADDWF   K2,1
+0290   2???           01039         GOTO    K2_CHECK
+0291                  01040 K2_PLUS_FIVE
+0291   3005           01041         MOVLW   d'5'
+0292   07A4           01042         ADDWF   K2,1
+0293   2???           01043         GOTO    K2_CHECK
+0294                  01044 K2_PLUS_SIX
+0294   3006           01045         MOVLW   d'6'
+0295   07A4           01046         ADDWF   K2,1
+0296   2???           01047         GOTO    K2_CHECK
+0297                  01048 K2_CHECK
+0297   300A           01049         MOVLW   d'10'
+0298   0224           01050         SUBWF   K2,0
+0299   1883           01051         BTFSC   STATUS,1
+029A   2???           01052            GOTO    K2_MIN_TEN
+029B   2???           01053            GOTO    END_2
+                      01054             
+029C                  01055 K2_MIN_TEN
+029C   300A           01056         MOVLW   b'00001010'
+029D   02A4           01057         SUBWF   K2,1
+029E   2???           01058         GOTO    K3_PLUS_ONE
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 22
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+029F   2???           01059         GOTO    END_2
+                      01060 
+02A0                  01061 K3_PLUS_ONE
+02A0   3001           01062         MOVLW   d'1'
+02A1   07A3           01063         ADDWF   K3,1
+02A2   2???           01064         GOTO    K3_CHECK
+02A3                  01065 K3_PLUS_TWO
+02A3   3002           01066         MOVLW   d'2'
+02A4   07A3           01067         ADDWF   K3,1
+02A5   2???           01068         GOTO    K3_CHECK
+02A6                  01069 K3_PLUS_FIVE
+02A6   3005           01070         MOVLW   d'5'
+02A7   07A3           01071         ADDWF   K3,1
+02A8   2???           01072         GOTO    K3_CHECK
+02A9                  01073 K3_PLUS_SIX
+02A9   3006           01074         MOVLW   d'6'
+02AA   07A3           01075         ADDWF   K3,1
+02AB   2???           01076         GOTO    K3_CHECK
+02AC                  01077 K3_CHECK
+02AC   300A           01078         MOVLW   D'10'
+02AD   0223           01079         SUBWF   K3,0
+                      01080         
+02AE   0803           01081         MOVF    STATUS,0
+                      01082         ;MOVWF  PORTB
+                      01083         
+02AF   1883           01084         BTFSC   STATUS,1
+02B0   2???           01085             GOTO    K3_MIN_TEN
+02B1   2???           01086             GOTO    END_2
+                      01087             
+02B2                  01088 K3_MIN_TEN
+02B2   300A           01089                 MOVLW   b'00001010'
+02B3   02A3           01090                 SUBWF   K3,1
+02B4   2???           01091                 GOTO    K4_PLUS_ONE
+02B5   2???           01092                 GOTO    END_2
+02B6                  01093 K4_PLUS_ONE
+02B6   3001           01094         MOVLW   d'1'
+02B7   07BC           01095         ADDWF   K4,1
+02B8   2???           01096         GOTO    K4_CHECK
+02B9                  01097 K4_PLUS_TWO
+02B9   3002           01098         MOVLW   d'2'
+02BA   07BC           01099         ADDWF   K4,1
+02BB   2???           01100         GOTO    K4_CHECK
+02BC                  01101 K4_PLUS_FIVE
+02BC   3005           01102         MOVLW   d'5'
+02BD   07BC           01103         ADDWF   K4,1
+02BE   2???           01104         GOTO    K4_CHECK
+02BF                  01105 K4_PLUS_SIX
+02BF   3006           01106         MOVLW   d'6'
+02C0   07BC           01107         ADDWF   K4,1
+02C1   2???           01108         GOTO    K4_CHECK
+02C2                  01109 K4_CHECK
+02C2   300A           01110         MOVLW   D'10'
+02C3   023C           01111         SUBWF   K4,0
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 23
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      01112         
+02C4   0803           01113         MOVF    STATUS,0
+                      01114         ;MOVWF  PORTB
+                      01115         
+02C5   1883           01116         BTFSC   STATUS,1
+02C6   2???           01117             GOTO    K4_MIN_TEN
+02C7   2???           01118             GOTO    END_2
+                      01119             
+02C8                  01120 K4_MIN_TEN
+02C8   300A           01121                 MOVLW   b'00001010'
+02C9   02A3           01122                 SUBWF   K3,1
+02CA   2???           01123                 GOTO    END_2
+                      01124 
+02CB                  01125 END_2
+02CB   0008           01126     RETURN
+                      01127         
+                      01128     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+                      01129     
+                      01130     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+                      01131     ;subroutings_for_INITIALIZE_LCD
+02CC                  01132 INITIALIZE_LCD
+02CC   2???           01133         CALL    instructionMode
+02CD   2???           01134         CALL    setFunctions
+02CE   2???           01135         CALL    setDisplayOnOff
+02CF   2???           01136         CALL    displayClear
+02D0   2???           01137         CALL    setEntryModule
+02D1   2???           01138         CALL    set_CGRAM_address
+02D2   2???           01139         CALL    set_DDRAM_address_to_line1
+02D3   0008           01140     RETURN
+                      01141     ;______________________________________
+                      01142     
+02D4                  01143 instructionMode
+02D4   3000           01144             MOVLW   b'000'
+02D5   0087           01145             MOVWF   PORTC
+02D6   2???           01146             CALL    ENABLE_PULSE
+02D7   0008           01147     RETURN
+                      01148     ;______________________________________
+02D8                  01149 dataSendMode
+                      01150             ;MOVLW   b'11111111'
+                      01151             ;MOVWF   PORTD
+                      01152 
+                      01153             ;MOVLW   b'00001'
+                      01154             ;MOVWF   PORTC
+02D8   1407           01155             BSF     PORTC,0
+                      01156             ;CALL    ENABLE_PULSE
+02D9   0008           01157     RETURN
+                      01158     ;______________________________________
+                      01159     
+02DA                  01160 setFunctions
+02DA   2???           01161         CALL    instructionMode
+02DB   0087           01162         MOVWF   PORTC
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 24
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+02DC   3038           01163         MOVLW   b'00111000'
+                      01164         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01165         ;| bit7     | bit6      | bit5      | bit4      | bit3      | bit2      | bit1      | bit0      
+                            |
+                      01166         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01167         ;|      0   |   0       |       1   |   1       |0=1 Line   |0=5x8 Dots |       x   |   x       
+                            |
+                      01168         ;|          |           |           |           |1=2 Line   |1=5x11 Dots|       x   |   x       
+                            |
+                      01169         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +  
+02DD   0088           01170         MOVWF   PORTD
+02DE   2???           01171         CALL    ENABLE_PULSE
+02DF   0008           01172     RETURN
+                      01173     ;______________________________________
+02E0                  01174 setDisplayOnOff
+02E0   2???           01175         CALL    instructionMode
+02E1   300F           01176         MOVLW   b'00001111'
+                      01177         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01178         ;| bit7     | bit6      | bit5      | bit4      | bit3      | bit2      | bit1      | bit0      
+                            |
+                      01179         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01180         ;|      0   |   0       |       0   |   0       |       1   |0=DispOff  |0=CurserOff|0=BlinkOff 
+                            |
+                      01181         ;|          |           |           |           |           |1=DispOn   |1=CurserOn |1=BlinkOn  
+                            |
+                      01182         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+02E2   0088           01183         MOVWF   PORTD
+02E3   2???           01184         CALL    ENABLE_PULSE
+02E4   0008           01185     RETURN
+                      01186     ;______________________________________
+02E5                  01187 displayClear
+02E5   2???           01188         CALL    instructionMode
+02E6   3001           01189         MOVLW   b'00000001'
+                      01190         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01191         ;| bit7     | bit6      | bit5      | bit4      | bit3      | bit2      | bit1      | bit0      
+                            |
+                      01192         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01193         ;|      0   |   0       |       0   |   0       |       0   |   0       |       0   |   1       
+                            |
+                      01194         ;|          |           |           |           |           |           |           |           
+                            |
+                      01195         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+02E7   0088           01196         MOVWF   PORTD
+02E8   2???           01197         CALL    ENABLE_PULSE
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 25
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+02E9   2???           01198         CALL    set_DDRAM_address_to_line1
+02EA   0008           01199     RETURN
+                      01200     ;______________________________________
+02EB                  01201 setEntryModule
+02EB   2???           01202         CALL    instructionMode
+02EC   3006           01203         MOVLW   b'00000110'
+                      01204         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            ----+
+                      01205         ;| bit7     | bit6      | bit5      | bit4      | bit3      | bit2      | bit1      | bit0      
+                                |
+                      01206         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            ----+
+                      01207         ;|      0   |   0       |       0   |   0       |       0   |   1       |0=Decrement|0=EntireShi
+                            ft  |
+                      01208         ;|          |           |           |           |           |           |   Mode    |   off     
+                                |
+                      01209         ;|          |           |           |           |           |           |1=Increment|1=EntireShi
+                            f   |
+                      01210         ;|          |           |           |           |           |           |   Mode    |   on      
+                                |
+                      01211         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            ----+
+02ED   0088           01212         MOVWF   PORTD
+02EE   2???           01213         CALL    ENABLE_PULSE
+02EF   0008           01214     RETURN
+                      01215     
+                      01216     ;______________________________________
+02F0                  01217 set_CGRAM_address
+02F0   2???           01218         CALL    instructionMode
+02F1   3040           01219         MOVLW   b'01000000'     
+                      01220         ;SET CGRAM ADDRESS
+                      01221         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01222         ;| bit7     | bit6      | bit5      |bit4       | bit3      | bit2      | bit1      | bit0      
+                            |
+                      01223         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01224         ;|      0   |   1       |       AC5 |   AC4     |       AC3 |   AC2     |       AC1 |   AC0     
+                            |
+                      01225         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01226         
+02F2   0088           01227         MOVWF   PORTD
+02F3   2???           01228         CALL    ENABLE_PULSE
+02F4   0008           01229     RETURN
+                      01230     
+                      01231     ;______________________________________
+02F5                  01232 set_DDRAM_address_to_line1
+02F5   2???           01233         CALL    instructionMode
+02F6   3080           01234         MOVLW   b'10000000'     ;SET DDRAM ADDRESS
+                      01235     
+                      01236         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 26
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      01237         ;| bit7     | bit6      | bit5      | bit4      | bit3      | bit2      | bit1      | bit0      
+                            |
+                      01238         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01239         ;|      1   |   AC6     |       AC5 |   AC4     |       AC3 |   AC2     |       AC1 |   AC0     
+                            |
+                      01240         ;+----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+                            +
+                      01241             ;DDRAM ADDRESS 1ST Line:00H to 27H
+                      01242             ;DDRAM ADDRESS 2ND Line:40H to 67H
+                      01243 
+02F7   0088           01244         MOVWF   PORTD
+02F8   2???           01245         CALL    ENABLE_PULSE
+02F9   2???           01246         CALL    dataSendMode
+02FA   0008           01247     RETURN
+                      01248    ;______________________________________
+02FB                  01249 set_DDRAM_address_to_line2
+02FB   2???           01250         CALL    instructionMode
+02FC   30C0           01251         MOVLW   b'11000000'
+02FD   0088           01252         MOVWF   PORTD
+02FE   2???           01253         CALL    ENABLE_PULSE
+02FF   2???           01254         CALL    dataSendMode
+                      01255 
+0300   0008           01256     RETURN
+                      01257     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+                      01258     ;subroutings_for_INITIALIZE_IC
+0301                  01259 INITIALIZE_IC
+0301   2???           01260         CALL    GO_BANK_1
+0302   3080           01261             MOVLW   b'10000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0303   0087           01262             MOVWF   TRISC
+0304   3000           01263             MOVLW   b'00000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0305   0088           01264             MOVWF   TRISD
+0306   3001           01265             MOVLW   b'00000001'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0307   0086           01266             MOVWF   TRISB
+                      01267             
+0308   2???           01268         CALL    GO_BANK_0
+0309   1406           01269             BSF     PORTB,0
+030A   3000           01270             MOVLW   b'000'
+030B   0087           01271             MOVWF   PORTC
+                      01272 
+030C   3000           01273             MOVLW   b'00000000'
+030D   0088           01274             MOVWF   PORTD
+030E   0086           01275             MOVWF   PORTB
+                      01276             
+                      01277             
+030F   2???           01278             CALL    IC_INTERRUPT_CONFIG
+                      01279 
+0310   0008           01280     RETURN
+0311                  01281 IC_INTERRUPT_CONFIG
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 27
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0311   2???           01282         CALL    GO_BANK_1           ;SWITCH TO BANK 1
+                      01283            
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0312   1701           01284             bsf     OPTION_REG,6    ;Interrupt on rising edge of RB0/INT pin
+0313   178B           01285             bsf     INTCON,7        ;Enable all unmasked interrupts
+0314   160B           01286             bsf     INTCON,4        ;Enables the RB0/INT external interrupt
+0315   2???           01287         CALL    GO_BANK_0
+0316   0008           01288     RETURN
+                      01289     
+0317                  01290 GO_BANK_0
+0317   1283           01291         BCF         STATUS,5
+0318   1303           01292         BCF         STATUS,6
+0319   0008           01293     RETURN
+                      01294     
+031A                  01295 GO_BANK_1
+031A   1683           01296         BSF         STATUS,5
+031B   1303           01297         BCF         STATUS,6
+031C   0008           01298     RETURN
+                      01299     
+031D                  01300 GO_BANK_2
+031D   1283           01301         BCF         STATUS,5
+031E   1703           01302         BSF         STATUS,6
+031F   0008           01303     RETURN
+                      01304     
+0320                  01305 GO_BANK_3
+0320   1683           01306         BSF         STATUS,5
+0321   1703           01307         BSF         STATUS,6
+0322   0008           01308     RETURN
+                      01309     
+0323                  01310 ENABLE_PULSE
+                      01311         
+0323   1507           01312         BSF         PORTC,2
+0324   2???           01313         CALL    DELAY_50_MS
+0325   1107           01314         BCF         PORTC,2
+                      01315         ;CALL    DELAY_50_MS
+0326   0008           01316     RETURN
+                      01317     ;_______________________________________
+0327                  01318 DELAY_50_MS
+0327   0BA0           01319         DECFSZ  TIMER1,1
+0328   2???           01320         GOTO    DELAY_50_MS
+                      01321         ;DECFSZ TIMER2,1
+                      01322         ;GOTO   DELAY_50_MS
+                      01323         ;MOVLW   b'11111111'
+                      01324         ;movwf   TIMER1
+0329   0008           01325     RETURN
+                      01326     
+                      01327     ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            ++++++++++++
+                      01328     ;subroutings_for_PRINT_IN_LCD
+032A                  01329 PRINT_DIRECTION
+032A   2???           01330         CALL    displayClear
+032B   3044           01331         MOVLW   'D'
+032C   2???           01332         CALL    PRINT_CHAR
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 28
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+032D   3069           01333         MOVLW   'i'
+032E   2???           01334         CALL    PRINT_CHAR
+032F   3072           01335         MOVLW   'r'
+0330   2???           01336         CALL    PRINT_CHAR
+0331   3065           01337         MOVLW   'e'
+0332   2???           01338         CALL    PRINT_CHAR
+0333   3063           01339         MOVLW   'c'
+0334   2???           01340         CALL    PRINT_CHAR
+0335   3074           01341         MOVLW   't'
+0336   2???           01342         CALL    PRINT_CHAR
+0337   3069           01343         MOVLW   'i'
+0338   2???           01344         CALL    PRINT_CHAR
+0339   306F           01345         MOVLW   'o'
+033A   2???           01346         CALL    PRINT_CHAR
+033B   306E           01347         MOVLW   'n'
+033C   2???           01348         CALL    PRINT_CHAR
+033D   303A           01349         MOVLW   ':'
+033E   2???           01350         CALL    PRINT_CHAR      
+033F   0008           01351     RETURN
+                      01352     
+0340                  01353 PRINT_ANGLE_TEXT
+0340   3041           01354         MOVLW   'A'
+0341   2???           01355         CALL    PRINT_CHAR
+0342   306E           01356         MOVLW   'n'
+0343   2???           01357         CALL    PRINT_CHAR
+0344   3067           01358         MOVLW   'g'
+0345   2???           01359         CALL    PRINT_CHAR
+0346   306C           01360         MOVLW   'l'
+0347   2???           01361         CALL    PRINT_CHAR
+0348   3065           01362         MOVLW   'e'
+0349   2???           01363         CALL    PRINT_CHAR
+034A   303A           01364         MOVLW   ':'
+034B   2???           01365         CALL    PRINT_CHAR
+                      01366         
+034C   0008           01367     RETURN
+                      01368     
+034D                  01369 PRINT_K_VALUES
+                      01370         ;CALL   PRINT_ANGLE_TEXT
+                      01371         ;CALL   displayClear
+                      01372         ;CALL   set_DDRAM_address_to_line2
+                      01373         ;MOVLW  '+'
+                      01374         ;CALL    PRINT_CHAR
+                      01375         
+034D   302B           01376         MOVLW   '+'
+034E   2???           01377         CALL    PRINT_CHAR
+                      01378         
+034F   083C           01379         MOVF    K4,0
+0350   2???           01380         CALL    PUSH_DATA
+0351   2???           01381         CALL    MAKE_LCD_NUMBER
+0352   2???           01382         CALL    PRINT_CHAR
+                      01383         
+0353   0823           01384         MOVF    K3,0
+0354   2???           01385         CALL    PUSH_DATA
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 29
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0355   2???           01386         CALL    MAKE_LCD_NUMBER
+0356   2???           01387         CALL    PRINT_CHAR
+                      01388         
+0357   0824           01389         MOVF    K2,0
+0358   2???           01390         CALL    PUSH_DATA
+0359   2???           01391         CALL    MAKE_LCD_NUMBER
+035A   2???           01392         CALL    PRINT_CHAR
+                      01393         
+035B   0825           01394         MOVF    K1,0
+035C   2???           01395                 CALL    PUSH_DATA
+035D   2???           01396         CALL    MAKE_LCD_NUMBER
+035E   2???           01397         CALL    PRINT_CHAR
+                      01398         
+035F   0826           01399         MOVF    K0,0
+0360   2???           01400         CALL    PUSH_DATA
+0361   2???           01401         CALL    MAKE_LCD_NUMBER
+0362   2???           01402         CALL    PRINT_CHAR
+                      01403         
+0363   302C           01404         MOVLW   ','
+0364   2???           01405         CALL    PUSH_DATA
+                      01406 
+                      01407         
+0365   0008           01408         RETURN
+                      01409 ;---------------------------   
+                      01410 
+                      01411         
+0366                  01412 GET_CHARACTER
+0366   0782           01413         ADDWF   PCL,1
+0367   3441           01414         RETLW   'A'
+0368   3442           01415         RETLW   'B'
+0369   3443           01416         RETLW   'C'
+036A   3444           01417         RETLW   'D'
+036B   3445           01418         RETLW   'E'
+036C   3446           01419         RETLW   'F'
+036D   3447           01420         RETLW   'G'
+036E   3448           01421         RETLW   'H'
+                      01422         
+036F   0008           01423         RETURN
+                      01424 ;---------------------------   
+                      01425         
+0370                  01426 MAKE_LCD_NUMBER
+0370   3E30           01427         ADDLW   b'00110000'
+0371   0008           01428     RETURN
+                      01429     
+0372                  01430 PRINT_CHAR
+                      01431         ;CALL   LCD_CHECK_BUSY
+0372   0088           01432         MOVWF  PORTD
+0373   2???           01433         CALL    ENABLE_PULSE
+0374   0008           01434     RETURN
+                      01435 ;---------------------------   
+0375                  01436 LCD_CHECK_BUSY
+0375   2???           01437     GOTO BUSY
+0376                  01438 BUSY
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 30
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0376   1007           01439     BCF     PORTC,0
+0377   1487           01440     BSF     PORTC,1
+                      01441     ;CALL    ENABLE_PULSE
+0378   1886           01442     BTFSC   PORTB,1
+0379   2???           01443             GOTO    BUSY
+037A   2???           01444             GOTO    NOT_BUSY
+037B                  01445 NOT_BUSY
+037B   0008           01446     RETURN
+                      01447 ;--------------------------- 
+                      01448     
+                      01449     
+037C                  01450 WAIT
+037C   0BA0           01451         DECFSZ  TIMER1,1
+037D   2???           01452         GOTO    WAIT
+037E   0BA1           01453         DECFSZ  TIMER2,1
+037F   2???           01454         GOTO    WAIT
+0380   0008           01455     RETURN  
+                      01456     
+                      01457     END
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 31
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+A1E                               0000010A
+A1N                               000000FE
+A1S                               00000116
+A1W                               00000122
+A2E                               0000010C
+A2N                               00000100
+A2S                               00000118
+A2W                               00000124
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADCS2                             00000006
+ADC_OFF                           0000020F
+ADC_ON                            0000020C
+ADDEN                             00000003
+ADDITION_H                        0000003A
+ADDITION_L                        0000003B
+ADDITION_OF_FOUR                  000000F7
+ADDITION_ZERO                     000000F4
+ADD_ONE                           00000026
+ADD_TO_H                          0000002A
+ADD_ZERO                          00000028
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANGLE_H                           0000003D
+ANGLE_L                           0000003E
+ANGLE_REF_H                       0000003F
+ANGLE_REF_L                       00000040
+ANGLE_X_H                         00000041
+ANGLE_X_L                         00000042
+ANGLE_Y_H                         00000043
+ANGLE_Y_L                         00000044
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRGH                              00000002
+BUSY                              00000376
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CALCULATIONS                      000000ED
+CCP1CON                           00000017
+CCP1IE                            00000002
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 32
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2                             0000001B
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHECK_POIT_0                      0000025E
+CHECK_POIT_0H                     00000242
+CHECK_POIT_1                      0000025B
+CHECK_POIT_1H                     0000023D
+CHECK_POIT_2                      00000258
+CHECK_POIT_2H                     00000238
+CHECK_TSR                         00000058
+CHS0                              00000003
+CHS1                              00000004
+CHS2                              00000005
+CIS                               00000003
+CKE                               00000006
+CKP                               00000004
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000009C
+CMIE                              00000006
+CMIF                              00000006
+COMPARE                           00000064
+COMPARE_SETTINGS                  000000E5
+COMPARISION                       0000006F
+CONFIG_ADC_INTERUPT               00000212
+CONFIG_ADC_MODULE                 000001ED
+COUNTR                            00000045
+COUNTR_H                          00000048
+COUNTR_L                          00000049
+CREN                              00000004
+CSRC                              00000007
+CVR0                              00000000
+CVR1                              00000001
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 33
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CVR2                              00000002
+CVR3                              00000003
+CVRCON                            0000009D
+CVREN                             00000007
+CVROE                             00000006
+CVRR                              00000005
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+DELAY_50_MS                       00000327
+DEVIDER                           00000016
+DISP                              00000022
+D_A                               00000005
+D_NOT_A                           00000005
+EAST_H                            0000002C
+EAST_H_ZERO                       00000034
+EAST_L                            0000002D
+EAST_L_ZERO                       00000035
+ED                                00000078
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+ENABLE_PULSE                      00000323
+ENDZ_CMP                          000000E4
+END_2                             000002CB
+END_3                             00000257
+END_3H                            00000237
+END_CONVERSON                     0000021A
+END_MULTIPLY                      00000039
+ES                                00000096
+F                                 00000001
+FERR                              00000002
+FIND_K0                           00000252
+FIND_K1                           0000024D
+FIND_K2                           00000248
+FIND_KH0                          00000232
+FIND_KH1                          0000022D
+FIND_KH2                          00000228
+FSR                               00000004
+GCEN                              00000007
+GET_CHARACTER                     00000366
+GET_VALUES                        000001B5
+GET_ZERO                          00000180
+GIE                               00000007
+GO                                00000002
+GO_BANK_0                         00000317
+GO_BANK_1                         0000031A
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 34
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+GO_BANK_2                         0000031D
+GO_BANK_3                         00000320
+GO_DONE                           00000002
+GO_NOT_DONE                       00000002
+HIGH_BIT_COPPY                    00000027
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+IBF                               00000007
+IBOV                              00000005
+IC_INTERRUPT_CONFIG               00000311
+INDF                              00000000
+INITIALIZE_ADC                    000001E8
+INITIALIZE_ADC_SETTING            000001F0
+INITIALIZE_IC                     00000301
+INITIALIZE_LCD                    000002CC
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+K0                                00000026
+K0_CHECK                          0000026D
+K0_MIN_TEN                        00000272
+K0_PLUS_FIVE                      00000267
+K0_PLUS_ONE                       00000261
+K0_PLUS_SIX                       0000026A
+K0_PLUS_TWO                       00000264
+K1                                00000025
+K1_CHECK                          00000282
+K1_MIN_TEN                        00000287
+K1_PLUS_FIVE                      0000027C
+K1_PLUS_ONE                       00000276
+K1_PLUS_SIX                       0000027F
+K1_PLUS_TWO                       00000279
+K2                                00000024
+K2_CHECK                          00000297
+K2_MIN_TEN                        0000029C
+K2_PLUS_FIVE                      00000291
+K2_PLUS_ONE                       0000028B
+K2_PLUS_SIX                       00000294
+K2_PLUS_TWO                       0000028E
+K3                                00000023
+K3_CHECK                          000002AC
+K3_MIN_TEN                        000002B2
+K3_PLUS_FIVE                      000002A6
+K3_PLUS_ONE                       000002A0
+K3_PLUS_SIX                       000002A9
+K3_PLUS_TWO                       000002A3
+K4                                0000003C
+K4_CHECK                          000002C2
+K4_MIN_TEN                        000002C8
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 35
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+K4_PLUS_FIVE                      000002BC
+K4_PLUS_ONE                       000002B6
+K4_PLUS_SIX                       000002BF
+K4_PLUS_TWO                       000002B9
+K_VALUES_TO_ZERO                  0000021C
+LCD_CHECK_BUSY                    00000375
+LOOP_E                            00000190
+LOOP_EV                           000001C6
+LOOP_N                            00000183
+LOOP_NV                           000001BA
+LOOP_S                            0000019D
+LOOP_SV                           000001D2
+LOOP_W                            000001AA
+LOOP_WV                           000001DE
+LOW_BIT_COPPY                     00000028
+MAKE_LCD_NUMBER                   00000370
+MULTIPLY_X_100                    00000017
+MULTIPLY_X_100_H                  00000030
+Main                              00000005
+NE                                0000007C
+NEWS                              00000029
+NORTH_H                           0000002A
+NORTH_H_ZERO                      00000032
+NORTH_L                           0000002B
+NORTH_L_ZERO                      00000033
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_BUSY                          0000037B
+NOT_DONE                          00000002
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+NW                                000000B0
+OBF                               00000006
+OERR                              00000001
+OPTION_REG                        00000081
+P                                 00000004
+P11                               000001E7
+PCFG0                             00000000
+PCFG1                             00000001
+PCFG2                             00000002
+PCFG3                             00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 36
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTD                             00000008
+PORTE                             00000009
+PR2                               00000092
+PRINT_ANGLE                       00000066
+PRINT_ANGLE_TEXT                  00000340
+PRINT_CHAR                        00000372
+PRINT_DIRECTION                   0000032A
+PRINT_ER                          000000F0
+PRINT_K_VALUES                    0000034D
+PRINT_SET_ZERO                    00000169
+PROCESS_HIGH_VALUE                00000227
+PROCESS_LOWER_VALUE               00000247
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PSPIE                             00000007
+PSPIF                             00000007
+PSPMODE                           00000004
+PUSH_DATA                         00000057
+R                                 00000002
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RC0                               00000000
+RC1                               00000001
+RC2                               00000002
+RC3                               00000003
+RC4                               00000004
+RC5                               00000005
+RC6                               00000006
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 37
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+RC7                               00000007
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RD0                               00000000
+RD1                               00000001
+RD2                               00000002
+RD3                               00000003
+RD4                               00000004
+RD5                               00000005
+RD6                               00000006
+RD7                               00000007
+RE0                               00000000
+RE1                               00000001
+RE2                               00000002
+READ_WRITE                        00000002
+RET_POINT                         00000166
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+RX_TX_CONFIG                      00000043
+RX_TX_INTERRUPT                   0000005F
+R_NOT_W                           00000002
+R_W                               00000002
+S                                 00000003
+SEN                               00000000
+SEND_DATA                         0000004F
+SET_ANALOG_CH0                    000001FC
+SET_ANALOG_CH1                    00000200
+SET_ANALOG_CH2                    00000204
+SET_ANALOG_CH3                    00000208
+SET_VALUES_TO_ZERO                00000153
+SET_ZERO                          00000164
+SMP                               00000007
+SOUTH_H                           0000002E
+SOUTH_H_ZERO                      00000036
+SOUTH_L                           0000002F
+SOUTH_L_ZERO                      00000037
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 38
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SSPEN                             00000005
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
+SSPSTAT                           00000094
+START_CONVERSON                   00000218
+START_MULTYPLY_H                  00000032
+START_MULTYPLY_L                  00000021
+STATUS                            00000003
+SUBSTRACT                         0000012A
+SUBSTRACT_E                       00000138
+SUBSTRACT_N                       0000012F
+SUBSTRACT_S                       00000141
+SUBSTRACT_W                       0000014A
+SW                                000000CA
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+T2E                               0000010E
+T2N                               00000102
+T2S                               0000011A
+T2W                               00000126
+TEMPLATE                          0000000B
+TEMP_H                            00000046
+TEMP_L                            00000047
+TIMER1                            00000020
+TIMER2                            00000021
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 39
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRISC                             00000087
+TRISC0                            00000000
+TRISC1                            00000001
+TRISC2                            00000002
+TRISC3                            00000003
+TRISC4                            00000004
+TRISC5                            00000005
+TRISC6                            00000006
+TRISC7                            00000007
+TRISD                             00000088
+TRISD0                            00000000
+TRISD1                            00000001
+TRISD2                            00000002
+TRISD3                            00000003
+TRISD4                            00000004
+TRISD5                            00000005
+TRISD6                            00000006
+TRISD7                            00000007
+TRISE                             00000089
+TRISE0                            00000000
+TRISE1                            00000001
+TRISE2                            00000002
+TRMT                              00000001
+TX8_9                             00000006
+TX9                               00000006
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 40
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+W                                 00000000
+WAIT                              0000037C
+WCOL                              00000007
+WD                                00000074
+WEST_H                            00000030
+WEST_H_ZERO                       00000038
+WEST_L                            00000031
+WEST_L_ZERO                       00000039
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+XP                                000000F1
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_ALL                           00001FFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         000037FF
+_DEVID1                           00002006
+_FOSC_EXTRC                       00003FFF
+_FOSC_HS                          00003FFE
+_FOSC_LP                          00003FFC
+_FOSC_XT                          00003FFD
+_HS_OSC                           00003FFE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_LP_OSC                           00003FFC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC                           00003FFF
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_WRT_1FOURTH                      00003BFF
+_WRT_256                          00003DFF
+_WRT_HALF                         000039FF
+_WRT_OFF                          00003FFF
+_XT_OSC                           00003FFD
+MPASM 5.76                          RXTX.ASM   5-27-2018  23:24:03         PAGE 41
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+__16F877A                         00000001
+dataSendMode                      000002D8
+displayClear                      000002E5
+instructionMode                   000002D4
+setDisplayOnOff                   000002E0
+setEntryModule                    000002EB
+setFunctions                      000002DA
+set_CGRAM_address                 000002F0
+set_DDRAM_address_to_line1        000002F5
+set_DDRAM_address_to_line2        000002FB
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :    34 reported,     0 suppressed
+
+
